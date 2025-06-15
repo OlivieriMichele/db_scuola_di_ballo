@@ -1,0 +1,194 @@
+-- Query di Analisi per Database Scuola di Ballo
+-- ===============================================
+
+-- 1. STORICO PRESENZE DI UN CLIENTE
+-- Mostra tutte le lezioni a cui ha partecipato un cliente specifico
+-- ================================================================
+
+-- Versione base - presenze per CF cliente
+SELECT 
+    p.nome,
+    p.cognome,
+    l.ID as aula,
+    l.data,
+    l.ora,
+    c.nome as stile,
+    c.tipo as tipo_classe,
+    -- Determina se è corso o evento
+    CASE 
+        WHEN ec.nome IS NOT NULL THEN CONCAT('Corso ', ec.livello)
+        WHEN e.nome IS NOT NULL THEN e.descrizione
+        ELSE 'Non specificato'
+    END as dettaglio_lezione
+FROM partecipa part
+JOIN PERSONA p ON part.cf = p.cf
+JOIN LEZIONE l ON part.ID = l.ID AND part.data = l.data AND part.ora = l.ora
+LEFT JOIN EDIZIONE_CORSO ec ON l.ID = ec.ID AND l.data = ec.data AND l.ora = ec.ora
+LEFT JOIN EVENTO e ON l.ID = e.ID AND l.data = e.data AND l.ora = e.ora
+LEFT JOIN CLASSE c ON (ec.nome = c.nome AND ec.tipo = c.tipo) OR (e.nome = c.nome AND e.tipo = c.tipo)
+WHERE part.cf = 'VRDLCA88D12L219Z'  -- Sostituire con CF desiderato
+ORDER BY l.data DESC, l.ora DESC;
+
+-- Versione con statistiche - presenze raggruppate per stile
+SELECT 
+    p.nome,
+    p.cognome,
+    c.nome as stile,
+    c.tipo as tipo_classe,
+    COUNT(*) as numero_presenze,
+    MIN(l.data) as prima_lezione,
+    MAX(l.data) as ultima_lezione
+FROM partecipa part
+JOIN PERSONA p ON part.cf = p.cf
+JOIN LEZIONE l ON part.ID = l.ID AND part.data = l.data AND part.ora = l.ora
+LEFT JOIN EDIZIONE_CORSO ec ON l.ID = ec.ID AND l.data = ec.data AND l.ora = ec.ora
+LEFT JOIN EVENTO e ON l.ID = e.ID AND l.data = e.data AND l.ora = e.ora
+LEFT JOIN CLASSE c ON (ec.nome = c.nome AND ec.tipo = c.tipo) OR (e.nome = c.nome AND e.tipo = c.tipo)
+WHERE part.cf = 'VRDLCA88D12L219Z'  -- Sostituire con CF desiderato
+GROUP BY p.cf, c.nome, c.tipo
+ORDER BY numero_presenze DESC;
+
+
+-- 2. INSEGNANTI DI UN CORSO
+-- Mostra tutti gli insegnanti che hanno insegnato in un corso specifico
+-- =====================================================================
+
+-- Insegnanti per corso specifico (tutte le edizioni)
+SELECT DISTINCT
+    p.nome,
+    p.cognome,
+    p.email,
+    p.telefono,
+    ins.cod_IBAN,
+    ec.nome as corso,
+    ec.livello,
+    ec.anno,
+    COUNT(DISTINCT CONCAT(l.data, '-', l.ora)) as numero_lezioni_insegnate
+FROM insegna i
+JOIN INSEGNANTE ins ON i.cf = ins.cf
+JOIN PERSONA p ON ins.cf = p.cf
+JOIN LEZIONE l ON i.ID = l.ID AND i.data = l.data AND i.ora = l.ora
+JOIN EDIZIONE_CORSO ec ON l.ID = ec.ID AND l.data = ec.data AND l.ora = ec.ora
+WHERE ec.nome = 'Salsa' AND ec.tipo = 'Corso'  -- Sostituire con corso desiderato
+GROUP BY p.cf, ec.nome, ec.livello, ec.anno
+ORDER BY ec.anno DESC, ec.livello, p.cognome;
+
+-- Insegnanti per corso e livello specifico
+SELECT 
+    p.nome,
+    p.cognome,
+    p.email,
+    ec.nome as corso,
+    ec.livello,
+    ec.anno,
+    l.data as data_lezione,
+    l.ora as ora_lezione,
+    l.ID as aula
+FROM insegna i
+JOIN INSEGNANTE ins ON i.cf = ins.cf
+JOIN PERSONA p ON ins.cf = p.cf
+JOIN LEZIONE l ON i.ID = l.ID AND i.data = l.data AND i.ora = l.ora
+JOIN EDIZIONE_CORSO ec ON l.ID = ec.ID AND l.data = ec.data AND l.ora = ec.ora
+WHERE ec.nome = 'Salsa' 
+  AND ec.tipo = 'Corso' 
+  AND ec.livello = 'Base'  -- Sostituire con corso/livello desiderato
+ORDER BY l.data, l.ora;
+
+
+-- 3. NUMERO PARTECIPANTI DI UN CORSO
+-- Conta i partecipanti per corso, livello e edizione
+-- ==================================================
+
+-- Partecipanti per corso e livello (edizione specifica)
+SELECT 
+    ec.nome as corso,
+    ec.tipo,
+    ec.livello,
+    ec.anno,
+    COUNT(DISTINCT part.cf) as numero_partecipanti_unici,
+    COUNT(*) as numero_presenze_totali,
+    ROUND(COUNT(*) / COUNT(DISTINCT part.cf), 2) as media_presenze_per_partecipante
+FROM EDIZIONE_CORSO ec
+JOIN LEZIONE l ON ec.ID = l.ID AND ec.data = l.data AND ec.ora = l.ora
+LEFT JOIN partecipa part ON l.ID = part.ID AND l.data = part.data AND l.ora = part.ora
+WHERE ec.nome = 'Salsa' 
+  AND ec.tipo = 'Corso' 
+  AND ec.livello = 'Base'  -- Sostituire con corso desiderato
+GROUP BY ec.nome, ec.tipo, ec.livello, ec.anno
+ORDER BY ec.anno DESC;
+
+-- Partecipanti per tutti i livelli di un corso
+SELECT 
+    ec.nome as corso,
+    ec.livello,
+    ec.anno,
+    COUNT(DISTINCT part.cf) as partecipanti_unici,
+    COUNT(DISTINCT CONCAT(l.data, '-', l.ora)) as numero_lezioni,
+    COUNT(*) as presenze_totali,
+    CASE 
+        WHEN COUNT(DISTINCT part.cf) > 0 
+        THEN ROUND(COUNT(*) / COUNT(DISTINCT part.cf), 2) 
+        ELSE 0 
+    END as media_presenze_per_partecipante
+FROM EDIZIONE_CORSO ec
+JOIN LEZIONE l ON ec.ID = l.ID AND ec.data = l.data AND ec.ora = l.ora
+LEFT JOIN partecipa part ON l.ID = part.ID AND l.data = part.data AND l.ora = part.ora
+WHERE ec.nome = 'Salsa' AND ec.tipo = 'Corso'  -- Sostituire con corso desiderato
+GROUP BY ec.nome, ec.livello, ec.anno
+ORDER BY ec.anno DESC, ec.livello;
+
+-- Lista dettagliata partecipanti con info personali
+SELECT 
+    ec.nome as corso,
+    ec.livello,
+    ec.anno,
+    p.nome,
+    p.cognome,
+    p.email,
+    p.telefono,
+    cli.cod_tessera,
+    COUNT(*) as presenze
+FROM EDIZIONE_CORSO ec
+JOIN LEZIONE l ON ec.ID = l.ID AND ec.data = l.data AND ec.ora = l.ora
+JOIN partecipa part ON l.ID = part.ID AND l.data = part.data AND l.ora = part.ora
+JOIN CLIENTE cli ON part.cf = cli.cf
+JOIN PERSONA p ON cli.cf = p.cf
+WHERE ec.nome = 'Bachata' 
+  AND ec.tipo = 'Corso'  -- Sostituire con corso desiderato
+GROUP BY ec.nome, ec.livello, ec.anno, p.cf
+ORDER BY ec.livello, p.cognome, p.nome;
+
+
+-- 4. QUERY BONUS - ANALISI GENERALE
+-- ==================================
+
+-- Riepilogo generale corsi con partecipazione
+SELECT 
+    c.nome as stile,
+    c.tipo,
+    COUNT(DISTINCT CASE WHEN ec.nome IS NOT NULL THEN CONCAT(ec.anno, '-', ec.livello) END) as edizioni_attive,
+    COUNT(DISTINCT part.cf) as clienti_coinvolti,
+    COUNT(DISTINCT i.cf) as insegnanti_coinvolti,
+    COUNT(*) as lezioni_totali
+FROM CLASSE c
+LEFT JOIN CORSO cor ON c.nome = cor.nome AND c.tipo = cor.tipo
+LEFT JOIN EDIZIONE_CORSO ec ON cor.nome = ec.nome AND cor.tipo = ec.tipo
+LEFT JOIN LEZIONE l ON ec.ID = l.ID AND ec.data = l.data AND ec.ora = l.ora
+LEFT JOIN partecipa part ON l.ID = part.ID AND l.data = part.data AND l.ora = part.ora
+LEFT JOIN insegna i ON l.ID = i.ID AND l.data = i.data AND l.ora = i.ora
+WHERE c.tipo = 'Corso'
+GROUP BY c.nome, c.tipo
+ORDER BY clienti_coinvolti DESC;
+
+-- Analisi presenze per mese
+SELECT 
+    YEAR(l.data) as anno,
+    MONTH(l.data) as mese,
+    MONTHNAME(l.data) as nome_mese,
+    COUNT(DISTINCT part.cf) as clienti_unici,
+    COUNT(*) as presenze_totali,
+    COUNT(DISTINCT CONCAT(l.ID, '-', l.data, '-', l.ora)) as lezioni_tenute
+FROM LEZIONE l
+LEFT JOIN partecipa part ON l.ID = part.ID AND l.data = part.data AND l.ora = part.ora
+GROUP BY YEAR(l.data), MONTH(l.data)
+ORDER BY anno DESC, mese DESC;

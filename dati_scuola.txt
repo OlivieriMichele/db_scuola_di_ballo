@@ -1,0 +1,113 @@
+-- Script di popolamento per il database Scuola di Ballo
+-- =====================================================
+
+-- 1. STILE (deve essere inserito per primo - referenziato da CLASSE)
+INSERT INTO STILE (nome) VALUES 
+('Salsa'),
+('Bachata'),
+('Tango'),
+('Vals');
+
+-- 2. AULA
+INSERT INTO AULA (ID) VALUES 
+(1),
+(2);
+
+-- 3. CLASSE (entità principale per corsi ed eventi)
+INSERT INTO CLASSE (nome, tipo, EVENTO, CORSO) VALUES 
+('Salsa', 'Corso', NULL, 'Salsa,Corso'),
+('Bachata', 'Corso', NULL, 'Bachata,Corso'),
+('Tango', 'Workshop', 'Tango,Workshop', NULL),
+('Vals', 'Lezione Privata', 'Vals,Lezione Privata', NULL);
+
+-- 4. CORSO (specializzazione di CLASSE)
+INSERT INTO CORSO (nome, tipo, descrizione) VALUES 
+('Salsa', 'Corso', 'Corso completo di salsa cubana per tutti i livelli'),
+('Bachata', 'Corso', 'Corso di bachata dominicana e sensual');
+
+-- 5. LISTINO (prezzi per le classi)
+INSERT INTO LISTINO (nome, tipo, numero_lezioni, prezzo) VALUES 
+('Salsa', 'Corso', 8, 80),
+('Salsa', 'Corso', 4, 45),
+('Bachata', 'Corso', 8, 85),
+('Tango', 'Workshop', 1, 25),
+('Vals', 'Lezione Privata', 1, 50);
+
+-- 6. LEZIONE (lezioni fisiche)
+INSERT INTO LEZIONE (ID, data, ora) VALUES 
+(1, '2024-07-01', 18),
+(1, '2024-07-08', 18),
+(2, '2024-07-02', 19),
+(2, '2024-07-09', 19),
+(1, '2024-07-15', 10),
+(2, '2024-07-20', 15);
+
+-- 7. EDIZIONE_CORSO (istanze specifiche dei corsi)
+INSERT INTO EDIZIONE_CORSO (nome, tipo, anno, livello, ID, data, ora) VALUES 
+('Salsa', 'Corso', 2024, 'Base', 1, '2024-07-01', 18),
+('Salsa', 'Corso', 2024, 'Intermedio', 1, '2024-07-08', 18),
+('Bachata', 'Corso', 2024, 'Base', 2, '2024-07-02', 19),
+('Bachata', 'Corso', 2024, 'Avanzato', 2, '2024-07-09', 19);
+
+-- 8. EVENTO (specializzazione di CLASSE)
+INSERT INTO EVENTO (nome, tipo, ID, data, ora, descrizione) VALUES 
+('Tango', 'Workshop', 1, '2024-07-15', 10, 'Workshop intensivo di tango argentino'),
+('Vals', 'Lezione Privata', 2, '2024-07-20', 15, 'Lezione privata personalizzata di vals');
+
+-- 9. PERSONA (persone del sistema)
+INSERT INTO PERSONA (cf, nome, cognome, nascita, email, telefono, INSEGNANTE, CLIENTE) VALUES 
+('RSSMRA85M15F205Y', 'Mario', 'Rossi', '1985-08-15', 'mario.rossi@email.com', '3331234567', 'RSSMRA85M15F205Y', NULL),
+('BNCGVN90F25H501X', 'Giovanna', 'Bianchi', '1990-06-25', 'giovanna.bianchi@email.com', '3339876543', 'BNCGVN90F25H501X', NULL),
+('VRDLCA88D12L219Z', 'Luca', 'Verdi', '1988-04-12', 'luca.verdi@email.com', '3335551234', NULL, 'VRDLCA88D12L219Z'),
+('NRIFRN92S20B157W', 'Francesca', 'Neri', '1992-11-20', 'francesca.neri@email.com', '3337778899', NULL, 'NRIFRN92S20B157W');
+
+-- 10. INSEGNANTE (specializzazione di PERSONA)
+INSERT INTO INSEGNANTE (cf, cod_IBAN) VALUES 
+('RSSMRA85M15F205Y', 'IT60X0542811101000000123456'),
+('BNCGVN90F25H501X', 'IT60X0542811101000000654321');
+
+-- 11. CLIENTE (specializzazione di PERSONA)
+INSERT INTO CLIENTE (cf, cod_tessera) VALUES 
+('VRDLCA88D12L219Z', 'TESS001'),
+('NRIFRN92S20B157W', 'TESS002');
+
+-- 12. insegna (relazione insegnante-lezione)
+INSERT INTO insegna (ID, data, ora, cf) VALUES 
+(1, '2024-07-01', 18, 'RSSMRA85M15F205Y'),
+(1, '2024-07-08', 18, 'RSSMRA85M15F205Y'),
+(2, '2024-07-02', 19, 'BNCGVN90F25H501X'),
+(2, '2024-07-09', 19, 'BNCGVN90F25H501X'),
+(1, '2024-07-15', 10, 'RSSMRA85M15F205Y'),
+(2, '2024-07-20', 15, 'BNCGVN90F25H501X');
+
+-- 13. partecipa (relazione cliente-lezione)
+INSERT INTO partecipa (ID, data, ora, cf) VALUES 
+(1, '2024-07-01', 18, 'VRDLCA88D12L219Z'),
+(1, '2024-07-08', 18, 'VRDLCA88D12L219Z'),
+(2, '2024-07-02', 19, 'NRIFRN92S20B157W'),
+(2, '2024-07-09', 19, 'NRIFRN92S20B157W'),
+(1, '2024-07-15', 10, 'VRDLCA88D12L219Z');
+
+-- 14. ABBONAMENTO (abbonamenti dei clienti)
+INSERT INTO ABBONAMENTO (cf, nome, tipo, numero_lezioni, stato, prezzo_pagato, lezioni_residue) VALUES 
+('VRDLCA88D12L219Z', 'Salsa', 'Corso', 8, 'Attivo', 80, 6),
+('NRIFRN92S20B157W', 'Bachata', 'Corso', 8, 'Attivo', 85, 6);
+
+-- 15. COMMENTO (feedback sulle edizioni)
+INSERT INTO COMMENTO (ID, descrizione, nome, tipo, anno, livello) VALUES 
+(1, 'Ottimo corso, insegnante molto preparato e paziente!', 'Salsa', 'Corso', 2024, 'Base'),
+(2, 'Livello intermedio perfetto per chi ha già le basi', 'Salsa', 'Corso', 2024, 'Intermedio');
+
+-- 16. richiesata_lezione_privata (richieste di lezioni private)
+INSERT INTO richiesata_lezione_privata (R_C_cf, cf) VALUES 
+('VRDLCA88D12L219Z', 'BNCGVN90F25H501X'),
+('NRIFRN92S20B157W', 'RSSMRA85M15F205Y');
+
+-- 17. USER (utenti del sistema)
+INSERT INTO USER (UserName, cf, passward_hash, ruolo) VALUES 
+('mario.rossi', 'RSSMRA85M15F205Y', 'hash123456789', 'Insegnante'),
+('giovanna.bianchi', 'BNCGVN90F25H501X', 'hash987654321', 'Insegnante'),
+('luca.verdi', 'VRDLCA88D12L219Z', 'hash111222333', 'Cliente'),
+('francesca.neri', 'NRIFRN92S20B157W', 'hash444555666', 'Cliente');
+
+-- Fine script di popolamento
