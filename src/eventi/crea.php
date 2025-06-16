@@ -11,13 +11,19 @@ if ($_SESSION["ruolo"] !== "Admin") {
 
 require_once("../db.php");
 $db = new Database();
+$aule = $db->getAule();
 ?>
 
 <h2>Crea un nuovo evento</h2>
 <form method="POST">
   <input name="nome" placeholder="Nome" required>
   <input name="tipo" placeholder="Tipo" required>
-  <input name="id" placeholder="ID sala" type="number" required>
+  <select name="id" required>
+      <option value="">-- Seleziona sala --</option>
+      <?php foreach ($aule as $id): ?>
+        <option value="<?= htmlspecialchars($id) ?>"><?= htmlspecialchars($id) ?></option>
+      <?php endforeach; ?>
+    </select>
   <input name="data" type="date" required>
   <input name="ora" type="number" placeholder="Ora (es: 18)" required>
   <input name="descrizione" placeholder="Descrizione" required>

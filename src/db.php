@@ -43,6 +43,19 @@ class Database {
         }
     }
 
+    public function getAule() {
+        $aule = [];
+        $stmt = $this->conn->prepare("SELECT ID FROM AULA");
+        if ($stmt && $stmt->execute()) {
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $aule[] = $row["ID"];
+            }
+            $stmt->close();
+        }
+        return $aule;
+    }
+
     public function aggiungiPersona($cf, $nome, $cognome, $nascita, $email, $telefono, $ruolo) {
         // Controlla ruolo valido
         if (!in_array($ruolo, ['INSEGNANTE', 'CLIENTE'])) {
@@ -117,53 +130,75 @@ class Database {
         return $ok ? ["success" => true] : ["success" => false, "error" => "Errore inserimento corso (già esistente?)"];
     }
 
-
-    public function creaEvento($nome, $tipo, $id, $data, $ora, $descrizione) {
-    // 1. Crea stile se mancante
-    $this->creaStileSeNonEsiste($nome);
-
-    // 2. Crea classe se mancante
-    $this->creaClasseSeNonEsiste($nome, $tipo);
-
-    // 3. Crea lezione se mancante
-    $stmt = $this->conn->prepare("SELECT * FROM LEZIONE WHERE ID = ? AND data = ? AND ora = ?");
-    $stmt->bind_param("isi", $id, $data, $ora);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $stmt->close();
-
-    if ($result->num_rows === 0) {
-        $stmt = $this->conn->prepare("INSERT INTO LEZIONE (ID, data, ora) VALUES (?, ?, ?)");
-        if (!$stmt) return ["success" => false, "error" => "Errore creazione lezione: " . $this->conn->error];
+    public function creaLezioneSeNonEsiste($id, $data, $ora) {
+        $stmt = $this->conn->prepare("SELECT * FROM LEZIONE WHERE ID = ? AND data = ? AND ora = ?");
         $stmt->bind_param("isi", $id, $data, $ora);
-        if (!$stmt->execute()) {
-            $stmt->close();
-            return ["success" => false, "error" => "Errore inserimento lezione: " . $stmt->error];
-        }
+        $stmt->execute();
+        $res = $stmt->get_result();
         $stmt->close();
+
+        if ($res->num_rows === 0) {
+            $stmt = $this->conn->prepare("INSERT INTO LEZIONE (ID, data, ora) VALUES (?, ?, ?)");
+            if (!$stmt) return ["success" => false, "error" => "Errore prepare lezione: " . $this->conn->error];
+            $stmt->bind_param("isi", $id, $data, $ora);
+            $ok = $stmt->execute();
+            $stmt->close();
+            if (!$ok) {
+                return ["success" => false, "error" => "Errore inserimento lezione: " . $this->conn->error];
+            }
+        }
+
+        return ["success" => true];
     }
 
-    // 4. Inserisce evento
-    $stmt = $this->conn->prepare("INSERT INTO EVENTO (nome, tipo, ID, data, ora, descrizione) VALUES (?, ?, ?, ?, ?, ?)");
-    if (!$stmt) return ["success" => false, "error" => "Errore prepare evento: " . $this->conn->error];
-    $stmt->bind_param("ssisis", $nome, $tipo, $id, $data, $ora, $descrizione);
-    $ok = $stmt->execute();
-    $errore = $stmt->error;
-    $stmt->close();
+    public function creaEvento($nome, $tipo, $id, $data, $ora, $descrizione) {
+        // 1. Crea stile se mancante
+        $this->creaStileSeNonEsiste($nome);
 
-    return $ok
-        ? ["success" => true]
-        : ["success" => false, "error" => "Errore inserimento evento: " . $errore];
+        // 2. Crea classe se mancante
+        $this->creaClasseSeNonEsiste($nome, $tipo);
+
+        // 3. Crea lezione se mancante
+        $lezione = $this->creaLezioneSeNonEsiste($id, $data, $ora);
+        if (!$lezione["success"]) return $lezione;
+
+        // 4. Inserisce evento
+        $stmt = $this->conn->prepare("INSERT INTO EVENTO (nome, tipo, ID, data, ora, descrizione) VALUES (?, ?, ?, ?, ?, ?)");
+        if (!$stmt) return ["success" => false, "error" => "Errore prepare evento: " . $this->conn->error];
+        $stmt->bind_param("ssisis", $nome, $tipo, $id, $data, $ora, $descrizione);
+        $ok = $stmt->execute();
+        $errore = $stmt->error;
+        $stmt->close();
+
+        return $ok
+            ? ["success" => true]
+            : ["success" => false, "error" => "Errore inserimento evento: " . $errore];
     }
 
     public function creaEdizioneCorso($nome, $tipo, $anno, $livello, $id, $data, $ora) {
-        $stmt = $this->conn->prepare("INSERT INTO EDIZIONE_CORSO (nome, tipo, anno, livello, ID, data, ora) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        if (!$stmt) return ["success" => false, "error" => "Errore query edizione corso"];
+        // Verifica o crea la lezione associata
+        $lezione = $this->creaLezioneSeNonEsiste($id, $data, $ora);
+        if (!$lezione["success"]) {
+            return ["success" => false, "error" => "Errore lezione: " . $lezione["error"]];
+        }
+
+        // Inserisce l'edizione del corso
+        $stmt = $this->conn->prepare("
+            INSERT INTO EDIZIONE_CORSO (nome, tipo, anno, livello, ID, data, ora)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        if (!$stmt) {
+            return ["success" => false, "error" => "Errore prepare edizione: " . $this->conn->error];
+        }
+
         $stmt->bind_param("ssisiss", $nome, $tipo, $anno, $livello, $id, $data, $ora);
         $ok = $stmt->execute();
+        $errore = $stmt->error;
         $stmt->close();
-        
-        return $ok ? ["success" => true] : ["success" => false, "error" => "Errore inserimento edizione"];
+
+        return $ok
+            ? ["success" => true]
+            : ["success" => false, "error" => "Errore inserimento edizione: " . $errore];
     }
 
 }   // in fase di inserimento sostituisci con: $hash = password_hash("1234", PASSWORD_DEFAULT);
