@@ -201,4 +201,96 @@ class Database {
             : ["success" => false, "error" => "Errore inserimento edizione: " . $errore];
     }
 
+    public function getEventiPerData($dataInizio) {
+        $dataInizio = date('Y-m-d', strtotime($dataInizio));
+        $dataFine = date('Y-m-d', strtotime($dataInizio . ' +6 days'));
+
+        $eventi = [];
+        $stmt = $this->conn->prepare("
+            SELECT nome, data, ora, descrizione, 'EVENTO' AS tipo
+            FROM EVENTO
+            WHERE data BETWEEN ? AND ?
+        ");
+        $stmt->bind_param("ss", $dataInizio, $dataFine);
+        if ($stmt->execute()) {
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $eventi[] = $row;
+            }
+        }
+        $stmt->close();
+
+        $stmt = $this->conn->prepare("
+            SELECT nome, data, ora, CONCAT('Livello: ', livello) AS descrizione, 'CORSO' AS tipo
+            FROM EDIZIONE_CORSO
+            WHERE data BETWEEN ? AND ?
+        ");
+        $stmt->bind_param("ss", $dataInizio, $dataFine);
+        if ($stmt->execute()) {
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $eventi[] = $row;
+            }
+        }
+        $stmt->close();
+
+        return $eventi;
+    }
+
+    public function getEventiPerInsegnante($cf, $dataInizio) {
+        $dataInizio = date('Y-m-d', strtotime($dataInizio));
+        $dataFine = date('Y-m-d', strtotime($dataInizio . ' +6 days'));
+        $eventi = [];
+
+        // Eventi pubblici
+        $stmt = $this->conn->prepare("
+            SELECT nome, data, ora, descrizione, 'EVENTO' AS tipo
+            FROM EVENTO
+            WHERE data BETWEEN ? AND ?
+        ");
+        $stmt->bind_param("ss", $dataInizio, $dataFine);
+        if ($stmt->execute()) {
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $eventi[] = $row;
+            }
+        }
+        $stmt->close();
+
+        // Corsi (edizioni)
+        $stmt = $this->conn->prepare("
+            SELECT nome, data, ora, CONCAT('Livello: ', livello) AS descrizione, 'CORSO' AS tipo
+            FROM EDIZIONE_CORSO
+            WHERE data BETWEEN ? AND ?
+        ");
+        $stmt->bind_param("ss", $dataInizio, $dataFine);
+        if ($stmt->execute()) {
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $eventi[] = $row;
+            }
+        }
+        $stmt->close();
+
+        // Lezioni private dell'insegnante
+        $stmt = $this->conn->prepare("
+            SELECT 'EVENTO' AS nome, data, ora, CONCAT('Con allievo: ', cf_allievo) AS descrizione, 'PRIVATA' AS tipo
+            FROM EVENTO
+            WHERE cf_insegnante = ? AND data BETWEEN ? AND ?
+        ");
+        $stmt->bind_param("sss", $cf, $dataInizio, $dataFine);
+        if ($stmt->execute()) {
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $eventi[] = $row;
+            }
+        }
+        $stmt->close();
+
+        # ToDo: aggiungere lezioni private per insegnante
+
+        return $eventi;
+    }
+
+
 }   // in fase di inserimento sostituisci con: $hash = password_hash("1234", PASSWORD_DEFAULT);
