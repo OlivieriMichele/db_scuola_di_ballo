@@ -26,6 +26,25 @@ $eventi = $db->getEventiPerData($dataInizio);
     th { background-color: #f0f0f0; }
     form { margin-bottom: 30px; }
     #calendar { max-width: 1000px; margin: auto; }
+
+    .logout-link {
+        display: block;
+        max-width: 200px;
+        margin: 40px auto 0 auto;
+        text-align: center;
+        background-color:rgb(175, 131, 180);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background-color 0.2s ease;
+    }
+
+    .logout-link:hover {
+        background-color:rgb(200, 35, 150);
+        color: white;
+    }
   </style>
 </head>
 <body>
@@ -45,7 +64,7 @@ $eventi = $db->getEventiPerData($dataInizio);
 <table>
   <tr><th>Nome</th><th>Data</th><th>Ora</th><th>Descrizione</th></tr>
   <?php foreach ($eventi as $e): ?>
-    <?php if ($e['tipo'] === 'EVENTO'): ?>
+    <?php if ($e['tipo'] !== 'Corso'): ?>
       <tr>
         <td><?= htmlspecialchars($e['nome']) ?></td>
         <td><?= htmlspecialchars($e['data']) ?></td>
@@ -60,7 +79,7 @@ $eventi = $db->getEventiPerData($dataInizio);
 <table>
   <tr><th>Nome</th><th>Data</th><th>Ora</th><th>Livello</th></tr>
   <?php foreach ($eventi as $e): ?>
-    <?php if ($e['tipo'] === 'CORSO'): ?>
+    <?php if ($e['tipo'] === 'Corso'): ?>
       <tr>
         <td><?= htmlspecialchars($e['nome']) ?></td>
         <td><?= htmlspecialchars($e['data']) ?></td>
@@ -70,6 +89,8 @@ $eventi = $db->getEventiPerData($dataInizio);
     <?php endif; ?>
   <?php endforeach; ?>
 </table>
+
+<a href="logout.php" class="logout-link">Esci</a>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

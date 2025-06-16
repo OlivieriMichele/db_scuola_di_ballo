@@ -238,16 +238,17 @@ class Database {
     }
 
     public function getEventiPerInsegnante($cf, $dataInizio) {
-        $dataInizio = date('Y-m-d', strtotime($dataInizio));
-        $dataFine = date('Y-m-d', strtotime($dataInizio . ' +6 days'));
-        $eventi = [];
+    $dataInizio = date('Y-m-d', strtotime($dataInizio));
+    $dataFine = date('Y-m-d', strtotime($dataInizio . ' +6 days'));
+    $eventi = [];
 
-        // Eventi pubblici
-        $stmt = $this->conn->prepare("
-            SELECT nome, data, ora, descrizione, 'EVENTO' AS tipo
-            FROM EVENTO
-            WHERE data BETWEEN ? AND ?
-        ");
+    // Eventi pubblici
+    $stmt = $this->conn->prepare("
+        SELECT nome, data, ora, descrizione, 'EVENTO' AS tipo
+        FROM EVENTO
+        WHERE data BETWEEN ? AND ?
+    ");
+    if ($stmt) {
         $stmt->bind_param("ss", $dataInizio, $dataFine);
         if ($stmt->execute()) {
             $res = $stmt->get_result();
@@ -256,13 +257,15 @@ class Database {
             }
         }
         $stmt->close();
+    }
 
-        // Corsi (edizioni)
-        $stmt = $this->conn->prepare("
-            SELECT nome, data, ora, CONCAT('Livello: ', livello) AS descrizione, 'CORSO' AS tipo
-            FROM EDIZIONE_CORSO
-            WHERE data BETWEEN ? AND ?
-        ");
+    // Edizioni corso
+    $stmt = $this->conn->prepare("
+        SELECT nome, data, ora, CONCAT('Livello: ', livello) AS descrizione, 'CORSO' AS tipo
+        FROM EDIZIONE_CORSO
+        WHERE data BETWEEN ? AND ?
+    ");
+    if ($stmt) {
         $stmt->bind_param("ss", $dataInizio, $dataFine);
         if ($stmt->execute()) {
             $res = $stmt->get_result();
@@ -271,13 +274,17 @@ class Database {
             }
         }
         $stmt->close();
+    }
 
-        // Lezioni private dell'insegnante
-        $stmt = $this->conn->prepare("
-            SELECT 'EVENTO' AS nome, data, ora, CONCAT('Con allievo: ', cf_allievo) AS descrizione, 'PRIVATA' AS tipo
-            FROM EVENTO
-            WHERE cf_insegnante = ? AND data BETWEEN ? AND ?
-        ");
+    // Lezioni private (richieste)
+    $stmt = $this->conn->prepare("
+        SELECT 'Lezione privata' AS nome, data, ora,
+               CONCAT('Con allievo: ', cf_allievo) AS descrizione,
+               'PRIVATA' AS tipo
+        FROM richiesata_lezione_privata
+        WHERE cf_insegnante = ? AND data BETWEEN ? AND ?
+    ");
+    if ($stmt) {
         $stmt->bind_param("sss", $cf, $dataInizio, $dataFine);
         if ($stmt->execute()) {
             $res = $stmt->get_result();
@@ -286,11 +293,11 @@ class Database {
             }
         }
         $stmt->close();
-
-        # ToDo: aggiungere lezioni private per insegnante
-
-        return $eventi;
     }
+
+    return $eventi;
+}
+
 
 
 }   // in fase di inserimento sostituisci con: $hash = password_hash("1234", PASSWORD_DEFAULT);
