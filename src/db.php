@@ -42,5 +42,32 @@ class Database {
             return ["success" => false, "error" => "Password errata"];
         }
     }
-}   // in fase di inserimento sostituisci con: $hash = password_hash("1234", PASSWORD_DEFAULT);
 
+    public function aggiungiPersona($cf, $nome, $cognome, $nascita, $email, $telefono, $ruolo) {
+        // Controlla ruolo valido
+        if (!in_array($ruolo, ['INSEGNANTE', 'CLIENTE'])) {
+            return ["success" => false, "error" => "Ruolo non valido"];
+        }
+
+        // Costruisci query dinamica con il campo giusto
+        $query = "
+            INSERT INTO PERSONA (cf, nome, cognome, nascita, email, telefono, $ruolo)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        if (!$stmt) {
+            return ["success" => false, "error" => "Errore nella query"];
+        }
+
+        // Valorizza solo il campo corrispondente (es. INSEGNANTE = cf, CLIENTE = cf)
+        $stmt->bind_param("sssssss", $cf, $nome, $cognome, $nascita, $email, $telefono, $cf);
+        $ok = $stmt->execute();
+        $stmt->close();
+
+        return $ok
+            ? ["success" => true]
+            : ["success" => false, "error" => "Errore durante l'inserimento"];
+    }
+
+}   // in fase di inserimento sostituisci con: $hash = password_hash("1234", PASSWORD_DEFAULT);
