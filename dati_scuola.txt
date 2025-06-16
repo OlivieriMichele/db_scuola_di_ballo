@@ -104,7 +104,7 @@ INSERT INTO richiesata_lezione_privata (R_C_cf, cf) VALUES
 ('NRIFRN92S20B157W', 'RSSMRA85M15F205Y');
 
 -- 17. USER (utenti del sistema)
-INSERT INTO USER (UserName, cf, passward_hash, ruolo) VALUES 
+INSERT INTO USER (UserName, cf, password_hash, ruolo) VALUES 
 ('mario.rossi', 'RSSMRA85M15F205Y', 'hash123456789', 'Insegnante'),
 ('giovanna.bianchi', 'BNCGVN90F25H501X', 'hash987654321', 'Insegnante'),
 ('luca.verdi', 'VRDLCA88D12L219Z', 'hash111222333', 'Cliente'),

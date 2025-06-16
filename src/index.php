@@ -23,7 +23,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $result = $db->login($user, $pass);
     if ($result["success"]) {
         $_SESSION["logged_in"] = ture;
-        header("Location: dashboard.php");
+        $_SESSION["username"] = $user;
+        $_SESSION["ruolo"] = $result["ruolo"];
+
+        switch ($result["ruolo"]) {
+            case "Cliente":
+                header("Location: dashboardCliente.php");
+                break;
+            case "Insegnante":
+                header("Location: dashboardInsegnante.php");
+                break;
+            case "Admin":
+                header("Location: dashboardAdmin.php");
+                break;
+            default:
+                echo "Ruolo non riconosciuto.";
+        }
         exit;
     } else {
         echo $result['error'];

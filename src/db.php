@@ -19,7 +19,7 @@ class Database {
     }
 
     public function login($username, $password) {
-        $stmt = $this->conn->prepare("SELECT password_hash FROM USER WHERE UserName = ?");
+        $stmt = $this->conn->prepare("SELECT password_hash, ruolo FROM USER WHERE UserName = ?");
         if (!$stmt) {
             return ["success" => false, "error" => "Errore nella query"];
         }
@@ -32,14 +32,15 @@ class Database {
             return ["success" => false, "error" => "Utente non trovato"];
         }
 
-        $stmt->bind_result($hash);
+        $stmt->bind_result($hash, $ruolo);
         $stmt->fetch();
         $stmt->close();
 
         if ($password === $hash) { // password_verify($password, $hash) per non tenere le password in chiaro
-            return ["success" => true];
+            return ["success" => true, "ruolo" => $ruolo];
         } else {
             return ["success" => false, "error" => "Password errata"];
         }
     }
-}
+}   // in fase di inserimento sostituisci con: $hash = password_hash("1234", PASSWORD_DEFAULT);
+
