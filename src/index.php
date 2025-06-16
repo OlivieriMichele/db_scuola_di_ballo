@@ -1,8 +1,20 @@
 <?php
 session_start();
 if (isset($_SESSION["logged_in"])) {
-    header("Location: dashboard.php");
-    exit;
+    if (isset($_SESSION["ruolo"])) {
+        switch ($_SESSION["ruolo"]) {
+            case "Cliente":
+                header("Location: dashboardCliente.php");
+                break;
+            case "Insegnante":
+                header("Location: dashboardInsegnante.php");
+                break;
+            case "Admin":
+                header("Location: dashboardAdmin.php");
+                break;
+        }
+    }
+    exit();
 }
 
 include("db.php");
