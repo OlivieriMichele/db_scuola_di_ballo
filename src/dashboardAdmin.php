@@ -79,7 +79,7 @@ if ($_SESSION["ruolo"] !== "Admin") {
             max-width: 200px;
             margin: 40px auto 0 auto;
             text-align: center;
-            background-color: #dc3545;
+            background-color:rgb(175, 131, 180);
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
@@ -89,7 +89,7 @@ if ($_SESSION["ruolo"] !== "Admin") {
         }
 
         .logout-link:hover {
-            background-color: #c82333;
+            background-color:rgb(200, 35, 150);
             color: white;
         }
 
@@ -116,6 +116,7 @@ if ($_SESSION["ruolo"] !== "Admin") {
   <li><a href="iscritti/aggiungi.php">Registra nuovo allievo</a></li>
   <li><a href="corsi/crea.php">Crea nuovo corso</a></li>
   <li><a href="eventi/crea.php">Crea evento</a></li>
+  <li><a href="lezioni/crea.php">Crea lezione</a></li>
   <!-- aggiungi altri link -->
 </ul>
 
