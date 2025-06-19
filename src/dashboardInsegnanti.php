@@ -80,23 +80,9 @@ $eventi = $db->getEventiPerInsegnante($cf, $dataInizio);
 <table>
   <tr><th>Nome</th><th>Data</th><th>Ora</th><th>Livello</th></tr>
   <?php foreach ($eventi as $e): ?>
-    <?php if ($e['tipo'] === 'Corso'): ?>
+    <?php if ($e['tipo'] === 'CORSO'): ?>
       <tr>
         <td><?= htmlspecialchars($e['nome']) ?></td>
-        <td><?= htmlspecialchars($e['data']) ?></td>
-        <td><?= htmlspecialchars($e['ora']) ?></td>
-        <td><?= htmlspecialchars($e['descrizione']) ?></td>
-      </tr>
-    <?php endif; ?>
-  <?php endforeach; ?>
-</table>
-
-<h2>Lezioni Private</h2>
-<table>
-  <tr><th>Data</th><th>Ora</th><th>Allievo</th></tr>
-  <?php foreach ($eventi as $e): ?>
-    <?php if ($e['tipo'] !== 'Corso'): ?>
-      <tr>
         <td><?= htmlspecialchars($e['data']) ?></td>
         <td><?= htmlspecialchars($e['ora']) ?></td>
         <td><?= htmlspecialchars($e['descrizione']) ?></td>

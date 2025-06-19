@@ -19,7 +19,7 @@ class Database {
     }
 
     public function login($username, $password) {
-        $stmt = $this->conn->prepare("SELECT password_hash, ruolo FROM USER WHERE UserName = ?");
+        $stmt = $this->conn->prepare("SELECT passward_hash, ruolo FROM USER WHERE UserName = ?");
         if (!$stmt) {
             return ["success" => false, "error" => "Errore nella query"];
         }
@@ -55,6 +55,46 @@ class Database {
         }
         return $aule;
     }
+    
+    public function getLezioniClientePartecipateDaUsername($username) {
+    $lezioni = [];
+
+    // 1. Recupera CF dell'utente
+    $stmt = $this->conn->prepare("SELECT cf FROM USER WHERE UserName = ?");
+    if (!$stmt) {
+        return [["sala" => null, "data" => null, "ora" => null, "cf" => "Errore USER: " . $this->conn->error]];
+    }
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $stmt->bind_result($cf);
+    if (!$stmt->fetch()) {
+        $stmt->close();
+        return []; // Nessun cf trovato
+    }
+    $stmt->close();
+
+    // 2. Lezioni frequentate
+    $stmt = $this->conn->prepare("
+        SELECT ID AS sala, data, ora
+        FROM partecipa
+        WHERE cf = ?
+        ORDER BY data, ora
+    ");
+    if (!$stmt) {
+        return [["sala" => null, "data" => null, "ora" => null, "cf" => "Errore PARTECIPA: " . $this->conn->error]];
+    }
+    $stmt->bind_param("s", $cf);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $lezioni[] = $row;
+    }
+    $stmt->close();
+
+    return $lezioni;
+}
+
+
 
     public function aggiungiPersona($cf, $nome, $cognome, $nascita, $email, $telefono, $ruolo) {
         // Controlla ruolo valido
